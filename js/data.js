@@ -107,36 +107,35 @@ const CONTRACT_TYPES = {
 };
 
 // ===== TYÖNTEKIJÄT =====
-// Tämä on oletusdata — voit muokata employees.html-sivulla
 const DEFAULT_EMPLOYEES = [
   // Ryhmämyynti (4 hlö)
-  { id: 1, name: "Ryhmämyynti 1", team: TEAMS.RYHMAMYYNTI, contract: "fulltime", allowedShifts: ["RM"], weekendAllowed: false },
-  { id: 2, name: "Ryhmämyynti 2", team: TEAMS.RYHMAMYYNTI, contract: "fulltime", allowedShifts: ["RM"], weekendAllowed: false },
-  { id: 3, name: "Ryhmämyynti 3", team: TEAMS.RYHMAMYYNTI, contract: "fulltime", allowedShifts: ["RM"], weekendAllowed: false },
-  { id: 4, name: "Ryhmämyynti 4", team: TEAMS.RYHMAMYYNTI, contract: "fulltime", allowedShifts: ["RM"], weekendAllowed: false },
+  { id: 1,  name: "Minna Korhonen",   team: TEAMS.RYHMAMYYNTI,    contract: "fulltime",      allowedShifts: ["RM"],                                    weekendAllowed: false },
+  { id: 2,  name: "Petri Mäkinen",    team: TEAMS.RYHMAMYYNTI,    contract: "fulltime",      allowedShifts: ["RM"],                                    weekendAllowed: false },
+  { id: 3,  name: "Sari Leinonen",    team: TEAMS.RYHMAMYYNTI,    contract: "fulltime",      allowedShifts: ["RM"],                                    weekendAllowed: false },
+  { id: 4,  name: "Jukka Virtanen",   team: TEAMS.RYHMAMYYNTI,    contract: "fulltime",      allowedShifts: ["RM"],                                    weekendAllowed: false },
 
   // Esimies + kollega
-  { id: 5, name: "Esimies", team: TEAMS.ESIMIES, contract: "fulltime", allowedShifts: ["AP"], weekendAllowed: false, isManager: true },
-  { id: 6, name: "Esimiehen kollega", team: TEAMS.ESIMIES, contract: "fulltime", allowedShifts: ["AP"], weekendAllowed: false },
+  { id: 5,  name: "Anna Heikkinen",   team: TEAMS.ESIMIES,        contract: "fulltime",      allowedShifts: ["AP"],                                    weekendAllowed: false, isManager: true },
+  { id: 6,  name: "Mikko Järvinen",   team: TEAMS.ESIMIES,        contract: "fulltime",      allowedShifts: ["AP"],                                    weekendAllowed: false },
 
-  // Satamavastaavat (2 hlö, vuorottelevat)
-  { id: 7, name: "Satamavastaava 1", team: TEAMS.SATAMA, contract: "fulltime", allowedShifts: ["SAT", "VKL"], weekendAllowed: true },
-  { id: 8, name: "Satamavastaava 2", team: TEAMS.SATAMA, contract: "fulltime", allowedShifts: ["SAT", "VKL"], weekendAllowed: true },
+  // Satamavastaavat (2 hlö)
+  { id: 7,  name: "Timo Nieminen",    team: TEAMS.SATAMA,         contract: "fulltime",      allowedShifts: ["SAT", "VKL"],                            weekendAllowed: true },
+  { id: 8,  name: "Leena Hakala",     team: TEAMS.SATAMA,         contract: "fulltime",      allowedShifts: ["SAT", "VKL"],                            weekendAllowed: true },
 
   // Asiakaspalvelu kokoaikaiset (3 hlö)
-  { id: 9,  name: "Asiakaspalvelu 1", team: TEAMS.ASIAKASPALVELU, contract: "fulltime", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L"], weekendAllowed: false },
-  { id: 10, name: "Asiakaspalvelu 2", team: TEAMS.ASIAKASPALVELU, contract: "fulltime", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L"], weekendAllowed: false },
-  { id: 11, name: "Asiakaspalvelu 3", team: TEAMS.ASIAKASPALVELU, contract: "fulltime", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L"], weekendAllowed: false },
+  { id: 9,  name: "Kaisa Laitinen",   team: TEAMS.ASIAKASPALVELU, contract: "fulltime",      allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L"],        weekendAllowed: false },
+  { id: 10, name: "Risto Hämäläinen", team: TEAMS.ASIAKASPALVELU, contract: "fulltime",      allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L"],        weekendAllowed: false },
+  { id: 11, name: "Tuija Saarinen",   team: TEAMS.ASIAKASPALVELU, contract: "fulltime",      allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L"],        weekendAllowed: false },
 
   // Asiakaspalvelu kesätyöntekijät (3 hlö)
-  { id: 12, name: "Kesätyöntekijä 1", team: TEAMS.ASIAKASPALVELU, contract: "summer", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true, isSummer: true },
-  { id: 13, name: "Kesätyöntekijä 2", team: TEAMS.ASIAKASPALVELU, contract: "summer", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true, isSummer: true },
-  { id: 14, name: "Kesätyöntekijä 3", team: TEAMS.ASIAKASPALVELU, contract: "summer", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true, isSummer: true },
+  { id: 12, name: "Veera Rantanen",   team: TEAMS.ASIAKASPALVELU, contract: "summer",        allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true,  isSummer: true },
+  { id: 13, name: "Lauri Tuominen",   team: TEAMS.ASIAKASPALVELU, contract: "summer",        allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true,  isSummer: true },
+  { id: 14, name: "Emilia Koskinen",  team: TEAMS.ASIAKASPALVELU, contract: "summer",        allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true,  isSummer: true },
 
   // Asiakaspalvelu osa-aikaiset (3 hlö)
-  { id: 15, name: "Osa-aikainen 1", team: TEAMS.ASIAKASPALVELU, contract: "parttime_flex", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true },
-  { id: 16, name: "Osa-aikainen 2", team: TEAMS.ASIAKASPALVELU, contract: "parttime_flex", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true },
-  { id: 17, name: "Osa-aikainen 3", team: TEAMS.ASIAKASPALVELU, contract: "parttime_flex", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true }
+  { id: 15, name: "Päivi Mäki",       team: TEAMS.ASIAKASPALVELU, contract: "parttime_flex", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true },
+  { id: 16, name: "Harri Väisänen",   team: TEAMS.ASIAKASPALVELU, contract: "parttime_flex", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true },
+  { id: 17, name: "Niina Ojala",      team: TEAMS.ASIAKASPALVELU, contract: "parttime_flex", allowedShifts: ["AP", "AP_L", "AP_LY", "AP_LY_L", "VKL"], weekendAllowed: true }
 ];
 
 // ===== SESONKIASETUKSET =====
@@ -234,6 +233,9 @@ function getDaysInMonth(year, month) {
 
 // ===== TIETOVARASTO (localStorage) =====
 
+// Versio — nosta numeroa kun haluat resetoida kaiken datan
+const DATA_VERSION = "2";
+
 function saveData(key, value) {
   localStorage.setItem("finnlines_" + key, JSON.stringify(value));
 }
@@ -244,8 +246,14 @@ function loadData(key, defaultValue = null) {
   try { return JSON.parse(raw); } catch { return defaultValue; }
 }
 
-// Alusta työntekijädata jos ei ole vielä tallennettu
+// Alusta työntekijädata — resetoi jos versio on vaihtunut
 function initEmployees() {
+  const storedVersion = loadData("data_version");
+  if (storedVersion !== DATA_VERSION) {
+    saveData("employees", DEFAULT_EMPLOYEES);
+    saveData("users", null);
+    saveData("data_version", DATA_VERSION);
+  }
   if (!loadData("employees")) {
     saveData("employees", DEFAULT_EMPLOYEES);
   }
@@ -253,15 +261,17 @@ function initEmployees() {
 
 // ===== KIRJAUTUMINEN =====
 
-// Luo käyttäjätunnukset automaattisesti työntekijöistä jos puuttuu
+// Luo käyttäjätunnukset automaattisesti työntekijöistä
 function initUsers() {
   const employees = loadData("employees", DEFAULT_EMPLOYEES);
   const users = loadData("users", null);
   if (!users) {
     const newUsers = employees.map(emp => ({
       employeeId: emp.id,
-      username: emp.name.toLowerCase().replace(/\s+/g, "."),
-      // Oletussalasana: "finnlines" — esimies voi vaihtaa
+      // Käyttäjätunnus: etunimi.sukunimi pienillä kirjaimilla
+      username: emp.name.toLowerCase()
+        .replace(/ä/g, "a").replace(/ö/g, "o").replace(/å/g, "a")
+        .replace(/\s+/g, "."),
       password: "finnlines",
       role: emp.isManager ? "manager" : "employee"
     }));
