@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luo lista — Finnlines</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Vuorolista-taulukko */
+    #schedule-table-wrapper {
+      overflow-x: auto;
+    }
+
+    #schedule-table {
+      font-size: 0.78rem;
+      min-width: 900px;
+    }
+
+    #schedule-table th {
+      font-size: 0.75rem;
+      padding: 0.4rem 0.5rem;
+    }
+
+    #schedule-table td {
+      padding: 0.35rem 0.5rem;
+      text-align: center;
+      border-bottom: 1px solid #e8edf2;
+    }
+
+    #schedule-table td:first-child {
+      text-align: left;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .cell-shift {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.72rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .shift-AP     { background:#dbe8f8; color:#003366; }
+    .shift-AP_L   { background:#b8d4f5; color:#003366; }
+    .shift-AP_LY  { background:#e8f4fb; color:#003366; }
+    .shift-AP_LY_L{ background:#c5e0f5; color:#003366; }
+    .shift-VKL    { background:#d4edda; color:#155724; }
+    .shift-RM     { background:#fde8cc; color:#7d4200; }
+    .shift-SAT    { background:#f0e6ff; color:#4a0080; }
+
+    .cell-weekend { background: #faf5ff; }
+    .cell-holiday { background: #fff9e6; }
+    .cell-empty   { color: #bbb; }
+
+    .season-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .season-controls { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="nav-placeholder"></div>
+
+  <main>
+    <h1>Luo työvuorolista</h1>
+    <div id="alert-container"></div>
+
+    <!-- Asetukset -->
+    <div class="card">
+      <h2>Asetukset</h2>
+      <div class="season-controls">
+        <div>
+          <label>Kuukausi</label>
+          <input type="month" id="select-month" />
+        </div>
+        <div>
+          <label>Sesonki (esitäyttö)</label>
+          <select id="select-season" onchange="applyPreset()">
+            <option value="winter">Talvi — matalakausi</option>
+            <option value="shoulder">Välikausi</option>
+            <option value="summer">Kesä — huippusesonki</option>
+          </select>
+        </div>
+        <div>
+          <label>Asiakaspalvelijoita arkisin (min)</label>
+          <input type="number" id="ap-min" min="1" max="10" value="3" />
+        </div>
+        <div>
+          <label>Asiakaspalvelijoita arkisin (max)</label>
+          <input type="number" id="ap-max" min="1" max="10" value="3" />
+        </div>
+        <div>
+          <label>Lähtöselvittäjiä arkisin</label>
+          <input type="number" id="ci-min" min="1" max="5" value="1" />
+        </div>
+        <div>
+          <label>Lähtöselvittäjiä viikonloppuisin / pyhisin</label>
+          <input type="number" id="ci-weekend" min="1" max="5" value="1" />
+        </div>
+      </div>
+      <button style="margin-top:1.2rem;" onclick="runScheduler()">Generoi lista</button>
+    </div>
+
+    <!-- Generointivirheet / varoitukset -->
+    <div id="warnings-card" class="card" style="display:none;">
+      <h2>Huomiot</h2>
+      <div id="warnings-list"></div>
+    </div>
+
+    <!-- Vuorolista -->
+    <div class="card" id="schedule-card" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+        <h2 id="schedule-title"></h2>
+        <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
+          <button class="secondary" onclick="approveSchedule()">✓ Hyväksy lista</button>
+          <button class="secondary" onclick="printSchedule()">Tulosta</button>
+        </div>
+      </div>
+
+      <!-- Tuntitilasto -->
+      <div id="stats-row" style="margin-bottom:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;"></div>
+
+      <!-- Taulukko -->
+      <div id="schedule-table-wrapper">
+        <table id="schedule-table">
+          <thead id="schedule-thead"></thead>
+          <tbody id="schedule-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Selite -->
+      <div style="margin-top:1rem;display:flex;gap:0.6rem;flex-wrap:wrap;font-size:0.8rem;">
+        <span class="cell-shift shift-AP">AP</span> 09–17
+        <span class="cell-shift shift-AP_L">AP-L</span> 09–17 + lähtöselvitys
+        <span class="cell-shift shift-AP_LY">AP-LY</span> 09–15
+        <span class="cell-shift shift-AP_LY_L">AP-LY-L</span> 09–15 + lähtöselvitys
+        <span class="cell-shift shift-VKL">VKL</span> 12–15 vkl
+        <span class="cell-shift shift-RM">RM</span> 08–16
+        <span class="cell-shift shift-SAT">SAT</span> 08–16
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/scheduler.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let generatedSchedule = null;
+    let scheduleYear = null;
+    let scheduleMonth = null;
+
+    // Aseta kuluva kuukausi oletukseksi
+    function setDefaultMonth() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      document.getElementById("select-month").value = `${yyyy}-${mm}`;
+    }
+
+    // Täytä arvot sesonkipresetistä
+    function applyPreset() {
+      const key = document.getElementById("select-season").value;
+      const preset = SEASON_PRESETS[key];
+      document.getElementById("ap-min").value = preset.apStaffMin;
+      document.getElementById("ap-max").value = preset.apStaffMax;
+      document.getElementById("ci-min").value = preset.checkInStaff.min;
+      document.getElementById("ci-weekend").value = preset.checkInStaff.min;
+    }
+
+    // Generoi lista
+    function runScheduler() {
+      const monthVal = document.getElementById("select-month").value;
+      if (!monthVal) { showAlert("Valitse kuukausi!", "error"); return; }
+
+      const [year, month] = monthVal.split("-").map(Number);
+      scheduleYear = year;
+      scheduleMonth = month;
+
+      const seasonSettings = {
+        apStaffMin: parseInt(document.getElementById("ap-min").value),
+        apStaffMax: parseInt(document.getElementById("ap-max").value),
+        checkInStaff: {
+          min: parseInt(document.getElementById("ci-min").value),
+          max: parseInt(document.getElementById("ci-min").value)
+        },
+        checkInWeekend: parseInt(document.getElementById("ci-weekend").value)
+      };
+
+      const allWishes = loadData("wishes", {});
+
+      // Muunna toiveet scheduler-muotoon: { empId: { dateStr: status } }
+      const employees = loadData("employees", DEFAULT_EMPLOYEES);
+      const wishesFlat = {};
+      employees.forEach(emp => {
+        wishesFlat[emp.id] = {};
+        const empWishes = allWishes[emp.id] || {};
+        // Yhdistä kaikki kuukaudet
+        Object.values(empWishes).forEach(monthWishes => {
+          Object.assign(wishesFlat[emp.id], monthWishes);
+        });
+      });
+
+      generatedSchedule = generateSchedule(year, month, seasonSettings, wishesFlat);
+
+      saveData("last_schedule_month", monthVal);
+      saveData("schedule_approved", false);
+      saveData("current_schedule", generatedSchedule);
+
+      renderScheduleTable(year, month, generatedSchedule, employees);
+      showAlert("Lista generoitu!", "success");
+    }
+
+    // Renderöi taulukko
+    function renderScheduleTable(year, month, schedule, employees) {
+      const days = getDaysInMonth(year, month);
+      const monthNames = ["Tammikuu","Helmikuu","Maaliskuu","Huhtikuu","Toukokuu","Kesäkuu",
+                          "Heinäkuu","Elokuu","Syyskuu","Lokakuu","Marraskuu","Joulukuu"];
+
+      document.getElementById("schedule-title").textContent = monthNames[month-1] + " " + year;
+      document.getElementById("schedule-card").style.display = "block";
+
+      // Otsikkorivi: päivät
+      const thead = document.getElementById("schedule-thead");
+      const dayNames = ["Su","Ma","Ti","Ke","To","Pe","La"];
+      let headerHtml = "<tr><th>Henkilö</th>";
+      days.forEach(d => {
+        const num = new Date(d).getDate();
+        const dayName = dayNames[new Date(d).getDay()];
+        const holiday = isHoliday(d);
+        const weekend = isWeekend(d);
+        const cls = holiday ? "cell-holiday" : weekend ? "cell-weekend" : "";
+        headerHtml += `<th class="${cls}" title="${FINNISH_HOLIDAYS[d] || ""}">${num}<br><small>${dayName}</small></th>`;
+      });
+      headerHtml += "<th>Vrk</th><th>h</th></tr>";
+      thead.innerHTML = headerHtml;
+
+      // Datarivi per henkilö
+      const tbody = document.getElementById("schedule-tbody");
+      tbody.innerHTML = "";
+      const stats = calcStats(schedule, employees);
+
+      employees.forEach(emp => {
+        const tr = document.createElement("tr");
+        let html = `<td>${emp.name}</td>`;
+
+        days.forEach(d => {
+          const shiftCode = schedule[d] && schedule[d][emp.id];
+          const weekend = isWeekend(d);
+          const holiday = isHoliday(d);
+          const cellCls = holiday ? "cell-holiday" : weekend ? "cell-weekend" : "";
+
+          if (shiftCode) {
+            html += `<td class="${cellCls}"><span class="cell-shift shift-${shiftCode.replace(/-/g,"_")}" title="${SHIFT_TYPES[shiftCode]?.name || ""}">${shiftCode}</span></td>`;
+          } else {
+            html += `<td class="${cellCls} cell-empty">—</td>`;
+          }
+        });
+
+        const s = stats[emp.id] || { days: 0, hours: 0 };
+        html += `<td><strong>${s.days}</strong></td><td><strong>${s.hours}</strong></td>`;
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+      });
+
+      // Tuntitilasto-kortit
+      const statsRow = document.getElementById("stats-row");
+      statsRow.innerHTML = "";
+      employees.forEach(emp => {
+        const s = stats[emp.id] || { days: 0, hours: 0 };
+        const contract = CONTRACT_TYPES[emp.contract];
+        const expectedHours = contract?.weeklyHours ? (contract.weeklyHours / 5 * 20).toFixed(0) : "?";
+        const div = document.createElement("div");
+        div.className = "badge badge-blue";
+        div.style.fontSize = "0.78rem";
+        div.textContent = `${emp.name}: ${s.hours}h`;
+        statsRow.appendChild(div);
+      });
+
+      // Varoitukset
+      checkWarnings(schedule, employees, days);
+    }
+
+    // Tarkista varoitukset
+    function checkWarnings(schedule, employees, days) {
+      const warnings = [];
+
+      employees.forEach(emp => {
+        let streak = 0;
+        let maxStreak = 0;
+        days.forEach(d => {
+          if (schedule[d] && schedule[d][emp.id]) {
+            streak++;
+            maxStreak = Math.max(maxStreak, streak);
+          } else {
+            streak = 0;
+          }
+        });
+        if (maxStreak > 5) {
+          warnings.push(`⚠️ ${emp.name}: ${maxStreak} päivää putkeen (max 5)`);
+        }
+      });
+
+      const warningsCard = document.getElementById("warnings-card");
+      const warningsList = document.getElementById("warnings-list");
+
+      if (warnings.length > 0) {
+        warningsCard.style.display = "block";
+        warningsList.innerHTML = warnings.map(w => `<div class="alert alert-warning">${w}</div>`).join("");
+      } else {
+        warningsCard.style.display = "none";
+      }
+    }
+
+    // Hyväksy lista
+    function approveSchedule() {
+      saveData("schedule_approved", true);
+      showAlert("Lista hyväksytty! ✓", "success");
+    }
+
+    // Tulosta
+    function printSchedule() {
+      window.print();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      setDefaultMonth();
+      applyPreset();
+    });
+  </script>
+
+</body>
+</html>

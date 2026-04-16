@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toiveet — Finnlines</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .wish-legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
+    }
+    .wish-legend span {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-green  { background: #28a745; }
+    .dot-red    { background: #dc3545; }
+    .dot-gray   { background: #aaa; }
+  </style>
+</head>
+<body>
+
+  <div id="nav-placeholder"></div>
+
+  <main>
+    <h1>Työvuorotoiveet</h1>
+    <div id="alert-container"></div>
+
+    <!-- Valitse henkilö ja kuukausi -->
+    <div class="card">
+      <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+        <div>
+          <label>Työntekijä</label>
+          <select id="select-employee" onchange="renderCalendar()">
+            <option value="">— Valitse —</option>
+          </select>
+        </div>
+        <div>
+          <label>Kuukausi</label>
+          <input type="month" id="select-month" onchange="renderCalendar()" />
+        </div>
+        <button onclick="saveWishes()">Tallenna toiveet</button>
+        <button class="secondary" onclick="clearWishes()">Tyhjennä kuukausi</button>
+      </div>
+    </div>
+
+    <!-- Ohje -->
+    <div class="card" id="wish-info" style="display:none;">
+      <div class="wish-legend">
+        <span><span class="dot dot-green"></span> Haluaa töihin</span>
+        <span><span class="dot dot-red"></span> Ei pysty</span>
+        <span><span class="dot dot-gray"></span> Ei väliä (oletus)</span>
+      </div>
+      <p style="font-size:0.88rem;color:#555;">Klikkaa päivää vaihtaaksesi tilaa. Vihreä = haluaa, punainen = ei pysty, harmaa = ei väliä.</p>
+    </div>
+
+    <!-- Kalenteri -->
+    <div class="card" id="calendar-card" style="display:none;">
+      <h2 id="calendar-title"></h2>
+      <div class="calendar-header" id="calendar-header"></div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/scheduler.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let currentWishes = {}; // { "2026-05-01": "available" | "unavailable" | "neutral" }
+
+    // Täytä henkilövalitsin
+    function populateEmployeeSelect() {
+      const employees = loadData("employees", DEFAULT_EMPLOYEES);
+      const sel = document.getElementById("select-employee");
+      employees.forEach(emp => {
+        const opt = document.createElement("option");
+        opt.value = emp.id;
+        opt.textContent = emp.name + " (" + emp.team + ")";
+        sel.appendChild(opt);
+      });
+    }
+
+    // Aseta kuluva kuukausi oletukseksi
+    function setDefaultMonth() {
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      document.getElementById("select-month").value = `${yyyy}-${mm}`;
+    }
+
+    // Renderöi kalenteri
+    function renderCalendar() {
+      const empId = document.getElementById("select-employee").value;
+      const monthVal = document.getElementById("select-month").value;
+      if (!empId || !monthVal) return;
+
+      const [year, month] = monthVal.split("-").map(Number);
+
+      // Lataa talletetut toiveet
+      const allWishes = loadData("wishes", {});
+      currentWishes = (allWishes[empId] && allWishes[empId][year + "-" + String(month).padStart(2,"0")]) || {};
+
+      const days = getDaysInMonth(year, month);
+      const monthNames = ["Tammikuu","Helmikuu","Maaliskuu","Huhtikuu","Toukokuu","Kesäkuu",
+                          "Heinäkuu","Elokuu","Syyskuu","Lokakuu","Marraskuu","Joulukuu"];
+
+      document.getElementById("calendar-title").textContent = monthNames[month-1] + " " + year;
+      document.getElementById("wish-info").style.display = "block";
+      document.getElementById("calendar-card").style.display = "block";
+
+      // Viikonpäivien otsikot
+      const header = document.getElementById("calendar-header");
+      header.innerHTML = ["Ma","Ti","Ke","To","Pe","La","Su"].map(d => `<div>${d}</div>`).join("");
+
+      // Kalenteri
+      const grid = document.getElementById("calendar-grid");
+      grid.innerHTML = "";
+
+      // Tyhjät solut ennen kuukauden alkua
+      const firstDay = new Date(year, month - 1, 1).getDay();
+      const emptyBefore = (firstDay === 0) ? 6 : firstDay - 1;
+      for (let i = 0; i < emptyBefore; i++) {
+        const empty = document.createElement("div");
+        empty.className = "cal-day empty";
+        grid.appendChild(empty);
+      }
+
+      // Päivät
+      days.forEach(dateStr => {
+        const dayNum = new Date(dateStr).getDate();
+        const weekend = isWeekend(dateStr);
+        const holiday = isHoliday(dateStr);
+        const wish = currentWishes[dateStr] || "neutral";
+
+        const div = document.createElement("div");
+        div.className = "cal-day" + (weekend ? " weekend" : "") + (holiday ? " holiday" : "");
+        div.classList.add("wish-" + wish);
+
+        const holidayName = FINNISH_HOLIDAYS[dateStr] ? `<br><span style="font-size:0.7rem;color:#856404;">${FINNISH_HOLIDAYS[dateStr]}</span>` : "";
+        const wishIcon = wish === "available" ? "✅" : wish === "unavailable" ? "❌" : "";
+
+        div.innerHTML = `<div class="day-num">${dayNum} ${wishIcon}</div>${holidayName}`;
+        div.addEventListener("click", () => toggleWish(dateStr, div));
+        grid.appendChild(div);
+      });
+    }
+
+    // Vaihda toiveen tila klikkauksella
+    function toggleWish(dateStr, el) {
+      const current = currentWishes[dateStr] || "neutral";
+      const next = { neutral: "available", available: "unavailable", unavailable: "neutral" };
+      const newWish = next[current];
+
+      currentWishes[dateStr] = newWish;
+
+      // Päivitä tyyli
+      el.classList.remove("wish-neutral", "wish-available", "wish-unavailable");
+      el.classList.add("wish-" + newWish);
+
+      const icon = newWish === "available" ? "✅" : newWish === "unavailable" ? "❌" : "";
+      const dayNum = new Date(dateStr).getDate();
+      const holidayName = FINNISH_HOLIDAYS[dateStr] ? `<br><span style="font-size:0.7rem;color:#856404;">${FINNISH_HOLIDAYS[dateStr]}</span>` : "";
+      el.innerHTML = `<div class="day-num">${dayNum} ${icon}</div>${holidayName}`;
+      el.addEventListener("click", () => toggleWish(dateStr, el));
+    }
+
+    // Tallenna toiveet
+    function saveWishes() {
+      const empId = document.getElementById("select-employee").value;
+      const monthVal = document.getElementById("select-month").value;
+      if (!empId || !monthVal) { showAlert("Valitse henkilö ja kuukausi!", "error"); return; }
+
+      const allWishes = loadData("wishes", {});
+      if (!allWishes[empId]) allWishes[empId] = {};
+      allWishes[empId][monthVal] = currentWishes;
+      saveData("wishes", allWishes);
+
+      showAlert("Toiveet tallennettu!", "success");
+    }
+
+    // Tyhjennä kuukauden toiveet
+    function clearWishes() {
+      if (!confirm("Tyhjennetäänkö kaikki tämän kuukauden toiveet?")) return;
+      currentWishes = {};
+      renderCalendar();
+      showAlert("Toiveet tyhjennetty.", "info");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      populateEmployeeSelect();
+      setDefaultMonth();
+    });
+  </script>
+
+</body>
+</html>

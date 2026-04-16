@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Työntekijät — Finnlines</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div id="nav-placeholder"></div>
+
+  <main>
+    <h1>Työntekijät</h1>
+    <div id="alert-container"></div>
+
+    <!-- Lisää työntekijä -->
+    <div class="card">
+      <h2>Lisää uusi työntekijä</h2>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div>
+          <label>Nimi</label>
+          <input type="text" id="emp-name" placeholder="Etunimi Sukunimi" />
+        </div>
+        <div>
+          <label>Tiimi</label>
+          <select id="emp-team">
+            <option value="Ryhmämyynti">Ryhmämyynti</option>
+            <option value="Esimies">Esimies</option>
+            <option value="Satamavastaava">Satamavastaava</option>
+            <option value="Asiakaspalvelu" selected>Asiakaspalvelu</option>
+          </select>
+        </div>
+        <div>
+          <label>Sopimustyyppi</label>
+          <select id="emp-contract">
+            <option value="fulltime">Kokoaikainen (37,5h/vko)</option>
+            <option value="parttime_flex">Osa-aikainen vaihteleva (20–37,5h)</option>
+            <option value="summer">Kesätyöntekijä (10–37,5h)</option>
+          </select>
+        </div>
+        <div>
+          <label>Viikonloput sallittu?</label>
+          <select id="emp-weekend">
+            <option value="false">Ei</option>
+            <option value="true">Kyllä</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:1rem;">
+        <label>Sallitut vuorotyypit</label>
+        <div id="shift-checkboxes" style="display:flex; gap:0.8rem; flex-wrap:wrap; margin-top:0.4rem;">
+          <!-- Täytetään JS:llä -->
+        </div>
+      </div>
+      <button style="margin-top:1.2rem;" onclick="addEmployee()">Lisää työntekijä</button>
+    </div>
+
+    <!-- Työntekijälista -->
+    <div class="card">
+      <h2>Kaikki työntekijät</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nimi</th>
+            <th>Tiimi</th>
+            <th>Sopimus</th>
+            <th>Vuorot</th>
+            <th>Viikonloppu</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="employee-table-body">
+          <!-- Täytetään JS:llä -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/scheduler.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    // Luo vuorotyyppien checkboxit
+    function buildShiftCheckboxes() {
+      const container = document.getElementById("shift-checkboxes");
+      container.innerHTML = "";
+      Object.keys(SHIFT_TYPES).forEach(code => {
+        const label = document.createElement("label");
+        label.style.cssText = "display:flex;align-items:center;gap:0.3rem;font-size:0.9rem;cursor:pointer;margin:0;";
+        label.innerHTML = `
+          <input type="checkbox" name="shift" value="${code}" />
+          <span class="badge badge-blue">${code}</span>
+        `;
+        container.appendChild(label);
+      });
+    }
+
+    // Renderöi työntekijätaulukko
+    function renderTable() {
+      const employees = loadData("employees", DEFAULT_EMPLOYEES);
+      const tbody = document.getElementById("employee-table-body");
+      tbody.innerHTML = "";
+
+      employees.forEach(emp => {
+        const contract = CONTRACT_TYPES[emp.contract] || { name: emp.contract };
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${emp.name}${emp.isManager ? ' <span class="badge badge-orange">Esimies</span>' : ""}${emp.isSummer ? ' <span class="badge badge-green">Kesä</span>' : ""}</td>
+          <td>${emp.team}</td>
+          <td>${contract.name}</td>
+          <td>${emp.allowedShifts.map(s => `<span class="badge badge-blue">${s}</span>`).join(" ")}</td>
+          <td>${emp.weekendAllowed ? "✅" : "❌"}</td>
+          <td><button class="danger" onclick="removeEmployee(${emp.id})" style="padding:0.3rem 0.7rem;font-size:0.8rem;">Poista</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Lisää työntekijä
+    function addEmployee() {
+      const name = document.getElementById("emp-name").value.trim();
+      if (!name) { showAlert("Anna nimi!", "error"); return; }
+
+      const team = document.getElementById("emp-team").value;
+      const contract = document.getElementById("emp-contract").value;
+      const weekendAllowed = document.getElementById("emp-weekend").value === "true";
+      const selectedShifts = [...document.querySelectorAll("input[name=shift]:checked")].map(cb => cb.value);
+
+      if (selectedShifts.length === 0) { showAlert("Valitse vähintään yksi vuorotyppi!", "error"); return; }
+
+      const employees = loadData("employees", DEFAULT_EMPLOYEES);
+      const newId = Math.max(...employees.map(e => e.id), 0) + 1;
+
+      employees.push({ id: newId, name, team, contract, allowedShifts: selectedShifts, weekendAllowed });
+      saveData("employees", employees);
+
+      document.getElementById("emp-name").value = "";
+      buildShiftCheckboxes();
+      renderTable();
+      showAlert(`${name} lisätty onnistuneesti!`, "success");
+    }
+
+    // Poista työntekijä
+    function removeEmployee(id) {
+      if (!confirm("Poistetaanko työntekijä?")) return;
+      let employees = loadData("employees", DEFAULT_EMPLOYEES);
+      employees = employees.filter(e => e.id !== id);
+      saveData("employees", employees);
+      renderTable();
+      showAlert("Työntekijä poistettu.", "info");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      buildShiftCheckboxes();
+      renderTable();
+    });
+  </script>
+
+</body>
+</html>

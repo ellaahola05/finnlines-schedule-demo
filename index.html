@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finnlines — Työvuorot</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div id="nav-placeholder"></div>
+
+  <main>
+    <h1>Dashboard</h1>
+    <div id="alert-container"></div>
+
+    <!-- Tilastokortit -->
+    <div class="dashboard-grid">
+      <div class="stat-card">
+        <div class="number" id="stat-employees">—</div>
+        <div class="label">Työntekijää yhteensä</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="stat-wishes">—</div>
+        <div class="label">Avoimia toiveita</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="stat-schedule">—</div>
+        <div class="label">Viimeisin lista</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="stat-approved">—</div>
+        <div class="label">Hyväksytty</div>
+      </div>
+    </div>
+
+    <!-- Pikavalinnat -->
+    <div class="card">
+      <h2>Pikavalinnat</h2>
+      <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.5rem;">
+        <a href="employees.html" class="btn">Hallinnoi työntekijöitä</a>
+        <a href="wishes.html" class="btn secondary">Katso toiveet</a>
+        <a href="schedule.html" class="btn">Luo uusi lista</a>
+      </div>
+    </div>
+
+    <!-- Tiimikooste -->
+    <div class="card">
+      <h2>Tiimit</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Tiimi</th>
+            <th>Henkilöitä</th>
+            <th>Vuorotyppi</th>
+          </tr>
+        </thead>
+        <tbody id="team-table-body">
+          <!-- Täytetään JS:llä -->
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/scheduler.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const employees = loadData("employees", DEFAULT_EMPLOYEES);
+
+      // Stat: työntekijöiden määrä
+      document.getElementById("stat-employees").textContent = employees.length;
+
+      // Stat: toiveet
+      const wishes = loadData("wishes", {});
+      const wishCount = Object.keys(wishes).length;
+      document.getElementById("stat-wishes").textContent = wishCount;
+
+      // Stat: viimeisin lista
+      const saved = loadData("last_schedule_month");
+      document.getElementById("stat-schedule").textContent = saved || "Ei vielä";
+
+      // Stat: hyväksytty
+      const approved = loadData("schedule_approved");
+      document.getElementById("stat-approved").textContent = approved ? "Kyllä ✓" : "Ei";
+
+      // Tiimitaulukko
+      const teams = {};
+      employees.forEach(e => {
+        if (!teams[e.team]) teams[e.team] = { count: 0, shifts: new Set() };
+        teams[e.team].count++;
+        e.allowedShifts.forEach(s => teams[e.team].shifts.add(s));
+      });
+
+      const tbody = document.getElementById("team-table-body");
+      Object.entries(teams).forEach(([team, data]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${team}</td>
+          <td>${data.count}</td>
+          <td>${[...data.shifts].map(s => `<span class="badge badge-blue">${s}</span>`).join(" ")}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  </script>
+
+</body>
+</html>
