@@ -332,6 +332,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      if (!requireManager()) return;
       setDefaultMonth();
       applyPreset();
     });

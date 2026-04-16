@@ -250,3 +250,64 @@ function initEmployees() {
     saveData("employees", DEFAULT_EMPLOYEES);
   }
 }
+
+// ===== KIRJAUTUMINEN =====
+
+// Luo käyttäjätunnukset automaattisesti työntekijöistä jos puuttuu
+function initUsers() {
+  const employees = loadData("employees", DEFAULT_EMPLOYEES);
+  const users = loadData("users", null);
+  if (!users) {
+    const newUsers = employees.map(emp => ({
+      employeeId: emp.id,
+      username: emp.name.toLowerCase().replace(/\s+/g, "."),
+      // Oletussalasana: "finnlines" — esimies voi vaihtaa
+      password: "finnlines",
+      role: emp.isManager ? "manager" : "employee"
+    }));
+    saveData("users", newUsers);
+  }
+}
+
+// Kirjaudu sisään — palauttaa käyttäjän tai null
+function loginUser(username, password) {
+  const users = loadData("users", []);
+  const user = users.find(
+    u => u.username === username.toLowerCase().trim() && u.password === password
+  );
+  if (!user) return null;
+  saveData("session", user);
+  return user;
+}
+
+// Hae kirjautunut käyttäjä
+function getSession() {
+  return loadData("session", null);
+}
+
+// Kirjaudu ulos
+function logoutUser() {
+  localStorage.removeItem("finnlines_session");
+  window.location.href = "login.html";
+}
+
+// Vaadi kirjautuminen — ohjaa login-sivulle jos ei kirjautunut
+function requireLogin() {
+  const session = getSession();
+  if (!session) {
+    window.location.href = "login.html";
+    return null;
+  }
+  return session;
+}
+
+// Vaadi esimiehen rooli — ohjaa omalle sivulle jos ei esimies
+function requireManager() {
+  const session = requireLogin();
+  if (!session) return null;
+  if (session.role !== "manager") {
+    window.location.href = "my-schedule.html";
+    return null;
+  }
+  return session;
+}

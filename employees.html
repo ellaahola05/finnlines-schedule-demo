@@ -152,6 +152,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      if (!requireManager()) return;
       buildShiftCheckboxes();
       renderTable();
     });

@@ -199,6 +199,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      if (!requireManager()) return;
       populateEmployeeSelect();
       setDefaultMonth();
     });

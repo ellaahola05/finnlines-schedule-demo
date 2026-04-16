@@ -19,26 +19,42 @@ function showAlert(message, type = "info", containerId = "alert-container") {
   setTimeout(() => { container.innerHTML = ""; }, 4000);
 }
 
-// Muodosta navigaatio HTML
-function buildNav() {
+// Muodosta navigaatio HTML roolin mukaan
+function buildNav(session) {
+  const isManager = session && session.role === "manager";
+  const employeeLinks = `
+    <a href="my-schedule.html">Oma näkymä</a>
+  `;
+  const managerLinks = `
+    <a href="index.html">Dashboard</a>
+    <a href="employees.html">Työntekijät</a>
+    <a href="wishes.html">Toiveet</a>
+    <a href="schedule.html">Luo lista</a>
+    <a href="my-schedule.html">Oma näkymä</a>
+  `;
+  const userLabel = session
+    ? `<span style="color:#aac4e0;font-size:0.85rem;margin-right:0.5rem;">${session.username}${isManager ? " (esimies)" : ""}</span>`
+    : "";
+
   return `
     <nav>
       <span class="logo">Finnlines — Työvuorot</span>
-      <a href="index.html">Dashboard</a>
-      <a href="employees.html">Työntekijät</a>
-      <a href="wishes.html">Toiveet</a>
-      <a href="schedule.html">Luo lista</a>
+      ${isManager ? managerLinks : employeeLinks}
+      ${userLabel}
+      <button onclick="logoutUser()" style="background:#ffffff22;padding:0.3rem 0.8rem;font-size:0.82rem;">Kirjaudu ulos</button>
     </nav>
   `;
 }
 
 // Alusta sivu
 document.addEventListener("DOMContentLoaded", () => {
-  // Lisää navigaatio jos elementti löytyy
+  initEmployees();
+  initUsers();
+
   const navPlaceholder = document.getElementById("nav-placeholder");
   if (navPlaceholder) {
-    navPlaceholder.innerHTML = buildNav();
+    const session = getSession();
+    navPlaceholder.innerHTML = buildNav(session);
+    setActiveNav();
   }
-  setActiveNav();
-  initEmployees();
 });
